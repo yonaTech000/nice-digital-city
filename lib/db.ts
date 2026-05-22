@@ -78,7 +78,7 @@ function createModelFromArray(array: unknown[], name?: string): AnyModel {
     },
     groupBy: async (opts?: { by?: string[] }) => {
       // support grouping by one field with _count
-      const by = opts?.by && opts.by[0];
+      const by = (opts?.by && opts.by[0]) || "id";
       const map: Record<string, number> = {};
       for (const it of array as any[]) {
         const key = it[by] || 'unknown';
