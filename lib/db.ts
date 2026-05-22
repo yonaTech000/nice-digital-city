@@ -81,7 +81,7 @@ function createModelFromArray(array: unknown[], name?: string): AnyModel {
       const by = (opts?.by && opts.by[0]) || "id";
       const map: Record<string, number> = {};
       for (const it of array as any[]) {
-        const key = it[by] || 'unknown';
+        const key = (it as any)[by] || 'unknown';
         map[key] = (map[key] || 0) + 1;
       }
       return Object.entries(map).map(([k, v]) => ({ [by as string]: k, _count: { id: v } }));
