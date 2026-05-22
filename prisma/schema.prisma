@@ -1,0 +1,231 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  STAFF
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum ServiceType {
+  ROOM
+  HALL
+  RESTAURANT
+  AMENITY
+  ACTIVITY
+  GYM
+  POOL
+  FUN_PARK
+  EVENT
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  password  String
+  name      String
+  phone     String?
+  role      UserRole   @default(USER)
+  bookings  Booking[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Room {
+  id          String    @id @default(cuid())
+  name        String
+  category    String    // Executive Suite, Super Standard Room, etc.
+  description String    @db.Text
+  image       String
+  pricePerNight Float
+  maxGuests   Int
+  amenities   String    @db.Text // JSON string
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Hall {
+  id          String    @id @default(cuid())
+  name        String
+  description String    @db.Text
+  image       String
+  capacity    Int
+  pricePerHour Float
+  amenities   String    @db.Text // JSON string
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Restaurant {
+  id          String    @id @default(cuid())
+  name        String
+  description String    @db.Text
+  image       String
+  cuisineType String
+  maxCapacity Int
+  pricePerPerson Float?
+  openTime    String
+  closeTime   String
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Amenity {
+  id          String    @id @default(cuid())
+  name        String
+  description String    @db.Text
+  image       String
+  type        String    // MiniMart, Parking, Service Bay, etc.
+  price       Float?
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Activity {
+  id          String    @id @default(cuid())
+  name        String
+  description String    @db.Text
+  image       String
+  price       Float
+  duration    String
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model GymPackage {
+  id          String    @id @default(cuid())
+  name        String
+  description String    @db.Text
+  price       Float
+  duration    String
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  name        String
+  description String    @db.Text
+  image       String
+  date        DateTime
+  price       Float
+  capacity    Int
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceType   ServiceType
+  status        BookingStatus @default(PENDING)
+  
+  // Service associations
+  roomId        String?
+  room          Room?         @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  
+  hallId        String?
+  hall          Hall?         @relation(fields: [hallId], references: [id], onDelete: SetNull)
+  
+  restaurantId  String?
+  restaurant    Restaurant?   @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  
+  amenityId     String?
+  amenity       Amenity?      @relation(fields: [amenityId], references: [id], onDelete: SetNull)
+  
+  activityId    String?
+  activity      Activity?     @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  
+  gymPackageId  String?
+  gymPackage    GymPackage?   @relation(fields: [gymPackageId], references: [id], onDelete: SetNull)
+  
+  eventId       String?
+  event         Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  
+  // Booking details
+  checkInDate   DateTime
+  checkOutDate  DateTime?
+  timeSlot      String?
+  guests        Int?
+  notes         String?
+  totalPrice    Float
+  // Payment relation: Payment holds the foreign key `bookingId`.
+  payment       Payment?
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Payment {
+  id            String    @id @default(cuid())
+  bookingId     String    @unique
+  booking       Booking?  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount        Float
+  status        String    @default("pending") // pending, completed, failed
+  method        String    // mpesa, card, cash
+  transactionId String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model BlockedDate {
+  id        String    @id @default(cuid())
+  serviceType ServiceType
+  serviceId String?
+  date      DateTime
+  reason    String?
+  createdAt DateTime  @default(now())
+}
+
+model ContactMessage {
+  id          String     @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  subject     String
+  message     String
+  status      String     @default("new")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Analytics {
+  id        String    @id @default(cuid())
+  date      DateTime  @default(now())
+  serviceType ServiceType
+  bookingsCount Int
+  revenue   Float
+  occupancyRate Float?
+  createdAt DateTime  @default(now())
+}
